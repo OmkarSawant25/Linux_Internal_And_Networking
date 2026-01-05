@@ -8,7 +8,7 @@ int main()
 {
     int fd;
     char str[50];
-
+    mkfifo("/tmp/my_fifo", 0644);
     // open FIFO in write mode
     fd = open("/tmp/my_fifo", O_WRONLY);
 
