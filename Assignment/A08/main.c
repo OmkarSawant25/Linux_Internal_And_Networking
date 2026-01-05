@@ -97,6 +97,25 @@ int main()
             if (pid2 > 0)
             {
                 printf("A child created with pid %d\n", pid2);
+                int pid3 = fork();
+
+                if (pid3 > 0)
+                {
+                    printf("A child created with pid %d\n", pid3);
+                }
+                while (waitpid(pid3, &status, WNOHANG) == 0)
+                {
+                    sleep(1);
+                    printf("Parent is running\n");
+                }
+                if (WIFEXITED(status))
+                {
+                    printf("Child %d terminated normally with exit status %d parent terminating\n", pid3, WEXITSTATUS(status));
+                }
+                else
+                {
+                    printf("Child %d terminated abnormally\n", pid3);
+                }
             }
         }
     }
