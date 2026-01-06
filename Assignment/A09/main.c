@@ -1,3 +1,35 @@
+/*
+Description
+
+Pre-requisites:
+-> Knowledge about system calls, How to read and understand ‘man pages’.
+-> Good knowledge about processes and IPC. 
+-> Working of pipe & dup system calls.
+
+Objective: 
+-> To understand working of pipe between two process. 
+
+Requirements: 
+-> Create two child process and execute commands passed from command-line arguments 
+-> Each command is separated by a '|' (pipe) character. 
+-> First child execute first command (with or without options) and pass o/p to next. 
+-> Second child executes second command (after '|') will reads I/p from first cmd. 
+-> Parent will wait for both child process to finish .
+
+Sample execution: 
+1. ./pipe (No arguments)
+    Error: No arguments passed Usage: ./pipe   <command1 > '|'   <command2>   
+
+2. ./pipe ls  
+    Error: Insufficient arguments passed Usage: ./pipe  <command1 > '|'   <command2>   
+
+3. ./pipe ls '|' wc
+    5 25 4. 
+
+4. ./pipe ls ­ -l -­a '|' wc -­l ­-w 
+    10 15
+*/
+
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
