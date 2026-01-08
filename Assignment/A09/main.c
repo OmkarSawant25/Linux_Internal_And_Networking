@@ -1,33 +1,48 @@
 /*
-Description
+   Name        : Omkar Ashok Sawant
+   Date        : 02/01/2026
+   Program     : A09 – Implement communication between two related processes using one pipe
 
-Pre-requisites:
--> Knowledge about system calls, How to read and understand ‘man pages’.
--> Good knowledge about processes and IPC. 
--> Working of pipe & dup system calls.
+   Description :
+   This program demonstrates inter-process communication (IPC)
+   between two related child processes using a single pipe.
+   The parent process creates two child processes, where the
+   output of the first command is redirected to the input of
+   the second command using pipe() and dup()/dup2() system
+   calls.
 
-Objective: 
--> To understand working of pipe between two process. 
+   The program demonstrates:
+   1. Creation of multiple child processes using fork()
+   2. Inter-process communication using pipe()
+   3. Redirection of standard input and output using dup/dup2()
+   4. Execution of commands using exec system calls
+   5. Parsing command-line arguments separated by '|'
+   6. Synchronization using wait() for child process termination
 
-Requirements: 
--> Create two child process and execute commands passed from command-line arguments 
--> Each command is separated by a '|' (pipe) character. 
--> First child execute first command (with or without options) and pass o/p to next. 
--> Second child executes second command (after '|') will reads I/p from first cmd. 
--> Parent will wait for both child process to finish .
+   Problem Statement :
+   Write a C program to implement communication between two
+   related processes using a single pipe. The program should
+   accept two commands from the command line separated by a
+   pipe ('|'). The first child process must execute the first
+   command and write its output to the pipe. The second child
+   process must read input from the pipe and execute the
+   second command. The parent process should wait for both
+   child processes to terminate.
 
-Sample execution: 
-1. ./pipe (No arguments)
-    Error: No arguments passed Usage: ./pipe   <command1 > '|'   <command2>   
+   OUTPUT :
+   ./pipe
+   Error: No arguments passed
+   Usage: ./pipe <command1> '|' <command2>
 
-2. ./pipe ls  
-    Error: Insufficient arguments passed Usage: ./pipe  <command1 > '|'   <command2>   
+   ./pipe ls
+   Error: Insufficient arguments passed
+   Usage: ./pipe <command1> '|' <command2>
 
-3. ./pipe ls '|' wc
-    5 25 4. 
+   ./pipe ls '|' wc
+   5 25 4
 
-4. ./pipe ls ­ -l -­a '|' wc -­l ­-w 
-    10 15
+   ./pipe ls -l -a '|' wc -l -w
+   10 15
 */
 
 #include <stdio.h>

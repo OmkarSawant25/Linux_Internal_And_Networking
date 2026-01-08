@@ -1,7 +1,43 @@
 /*
-Name        : Omkar Ashok Sawant
-Date        : 17/12/2025
-Description : A01 - Implement a cp(copy) command with –p option
+   Name        : Omkar Ashok Sawant
+   Date        : 02/01/2026
+   Program     : A01 – Implement a cp (copy) command with –p option
+
+   Description :
+   This program implements a simplified version of the Linux
+   `cp` command using basic file system calls. It copies the
+   contents of a source file to a destination file using file
+   descriptors. The program supports an optional `-p` option
+   to preserve file permissions from the source file to the
+   destination file.
+
+   The program demonstrates:
+   1. Handling of command-line arguments
+   2. File operations using open(), read(), write(), close()
+   3. Copying file permissions using fstat() and fchmod()
+   4. Checking destination file existence and overwrite
+      confirmation from the user
+   5. Proper error handling for all system calls
+   6. Copying zero-sized and non-zero-sized files correctly
+
+   Problem Statement :
+   Write a C program to copy the contents of one file to
+   another file using system calls. The source and destination
+   file names must be passed through command-line arguments.
+   If the destination file already exists, prompt the user for
+   overwrite confirmation. If the `-p` option is provided,
+   copy the file permissions of the source file to the
+   destination file.
+
+   OUTPUT :
+   ./my_copy source.txt dest.txt
+   → Copies source.txt to dest.txt
+
+   ./my_copy -p source.txt dest.txt
+   → Copies file content and preserves permissions
+
+   ./my_copy source.txt dest.txt
+   File "dest.txt" already exists. Do you want to overwrite (Y/n)
 */
 
 #include <stdio.h>    // Standard I/O

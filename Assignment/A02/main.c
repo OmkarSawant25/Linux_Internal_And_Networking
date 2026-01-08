@@ -1,3 +1,50 @@
+/*
+   Name        : Omkar Ashok Sawant
+   Date        : 02/01/2026
+   Program     : A02 – Implement a wc (word count) command with -l, -w, -c options
+
+   Description :
+   This program implements a simplified version of the Linux
+   `wc` (word count) command using basic file system calls.
+   It counts the number of lines, words, and characters
+   (bytes) from files passed through command-line arguments.
+   If no file is provided, the program reads input from
+   standard input until EOF (Ctrl + D).
+
+   The program demonstrates:
+   1. Handling command-line arguments and options using getopt()
+   2. Reading data using file descriptors (open, read, close)
+   3. Counting lines, words, and bytes from files or stdin
+   4. Processing multiple files and displaying individual
+      counts along with total counts
+   5. Selective output using -l, -w, and -c options
+   6. Proper error handling for system calls
+
+   Problem Statement :
+   Write a C program to count the number of lines, words, and
+   characters (bytes) in one or more files using system calls.
+   Implement a word_count() function that reads from a file
+   descriptor and updates line, word, and byte counts via
+   pass-by-reference. The main function should open files,
+   call the word_count() function, and print results.
+   If no file is provided, read from standard input until EOF.
+   Support -l, -w, and -c options individually or in
+   combination.
+
+   OUTPUT :
+   ./word_count
+   → Reads from stdin till EOF and prints line, word, and byte count
+
+   ./word_count file.txt
+   → Prints line, word, and byte count of file.txt
+
+   ./word_count f1.txt f2.txt
+   → Prints counts for each file and total count
+
+   ./word_count file.txt -l -w
+   → Prints only line and word count
+*/
+
 #include <stdio.h>
 #include <unistd.h> // getopt
 #include <fcntl.h>
