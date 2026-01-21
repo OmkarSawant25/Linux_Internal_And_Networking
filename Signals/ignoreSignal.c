@@ -7,9 +7,15 @@ void my_handler(int signum)
     printf("\nReceived signal number: %d\n", signum);
 
     if (signum == SIGINT)
+    {
         printf("No Lab\n");
+        signal(SIGINT, SIG_IGN);
+    }
     else if (signum == SIGTSTP)
+    {
         printf("Lab is there\n");
+        signal(SIGTSTP, SIG_DFL);
+    }
 }
 
 int main()
@@ -18,7 +24,7 @@ int main()
 
     // Registering signals
     signal(SIGINT, my_handler);  // Ctrl + C
-    // signal(SIGTSTP, my_handler); // Ctrl + Z
+    signal(SIGTSTP, my_handler); // Ctrl + Z
 
     while (1); // Infinite loop
 
