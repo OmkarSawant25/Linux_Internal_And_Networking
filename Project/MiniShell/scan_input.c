@@ -5,9 +5,17 @@ char *builtins[] = {"echo", "printf", "read", "cd", "pwd", "pushd", "popd", "dir
                     "exit", "exec", "shopt", "caller", "true", "type", "hash", "bind", "help", NULL};
 
 char *external_commands[153];
+int pid;
+int status;
+extern char prompt[25];
+int last_exit_status;
+
 void scan_input(char *prompt, char *input_string)
 {
     extract_external_commands(external_commands);
+
+    signal(SIGINT, signal_handler);
+    signal(SIGTSTP, signal_handler);
 
     while (1)
     {
@@ -43,7 +51,59 @@ void scan_input(char *prompt, char *input_string)
             if (type == BUILTIN)
             {
                 execute_internal_commands(input_string);
+                last_exit_status = 0;
             }
+            else if (type == EXTERNAL)
+            {
+                pid = fork();
+                if (pid > 0)
+                {
+                    // Parent
+                    waitpid(pid, &status, WUNTRACED);
+                    if (WIFEXITED(status))
+                    {
+                        last_exit_status = WEXITSTATUS(status);
+                    }
+                    else if (WIFSTOPPED(status))
+                    {
+                        last_exit_status = 128 + WSTOPSIG(status);
+                    }
+
+                    pid = 0;
+                }
+                else if (pid == 0)
+                {
+                    // Child
+                    signal(SIGINT, SIG_DFL);
+                    signal(SIGTSTP, SIG_DFL);
+                    execute_external_commands(input_string);
+                    exit(0);
+                }
+                else
+                {
+                    perror("fork");
+                }
+            }
+            else if (type == NO_COMMAND)
+            {
+                printf("Command not found: %s\n", cmd);
+            }
+            else
+            {
+                perror("fork");
+            }
+        }
+    }
+}
+
+void signal_handler(int sig_num)
+{
+    if (sig_num == SIGINT || sig_num == SIGTSTP)
+    {
+        if (pid <= 0)
+        {
+            printf("\n%s ", prompt);
+            fflush(stdout);
         }
     }
 }
@@ -143,7 +203,7 @@ void execute_internal_commands(char *input_string)
         free_external_commands(external_commands);
         exit(0);
     }
-    
+
     else if (strcmp(input_string, "pwd") == 0)
     {
         if (getcwd(buff, sizeof(buff)) != NULL)
@@ -161,8 +221,29 @@ void execute_internal_commands(char *input_string)
         else
         {
             // cd without path -> do nothing
-            printf("cd: missing operand\n");
+            // printf("cd: missing operand\n");
+            char *ptr = getenv("cd");
+            if (ptr)
+                printf("%s\n", ptr);
+            else
+                printf("cd not set\n");
         }
+    }
+    else if (strcmp(input_string, "echo $$") == 0)
+    {
+        printf("%d\n", getpid());
+    }
+    else if (strcmp(input_string, "echo $?") == 0)
+    {
+        printf("%d\n", last_exit_status);
+    }
+    else if (strcmp(input_string, "echo $SHELL") == 0)
+    {
+        char *ptr = getenv("SHELL");
+        if (ptr)
+            printf("%s\n", ptr);
+        else
+            printf("SHELL not set\n");
     }
 }
 
@@ -174,4 +255,129 @@ void free_external_commands(char **external_commands)
         free(external_commands[i]);
         i++;
     }
+}
+
+void execute_external_commands(char *input_string)
+{
+    int pipe_count = 0;
+    int rows = 0;
+
+    check_rows_and_pipe(input_string, &rows, &pipe_count);
+    char *external_cmd_array[rows + 1];
+
+    extract_external_commands_from_input_string(input_string, external_cmd_array);
+
+    if (pipe_count == 0)
+    {
+        execvp(external_cmd_array[0], external_cmd_array);
+        perror("execvp");
+        exit(1);
+    }
+    else
+    {
+        int pipe_fd[2];
+        int cmd[pipe_count];
+        cmd[0] = 0;
+        int count = 1;
+
+        for (int i = 0; external_cmd_array[i] != NULL; i++)
+        {
+            if (strcmp(external_cmd_array[i], "|") == 0)
+            {
+                external_cmd_array[i] = NULL;
+                cmd[count++] = i + 1;
+            }
+        }
+
+        for (int i = 0; i <= pipe_count; i++)
+        {
+            if (i != pipe_count)
+                pipe(pipe_fd);
+
+            int pid_pipe = fork();
+
+            if (pid_pipe > 0)
+            {
+                if (i != pipe_count)
+                {
+                    close(pipe_fd[1]);
+                    dup2(pipe_fd[0], 0);
+                    close(pipe_fd[0]);
+                }
+                wait(NULL);
+            }
+            else if (pid_pipe == 0)
+            {
+                if (i != pipe_count)
+                {
+                    close(pipe_fd[0]);
+                    dup2(pipe_fd[1], 1);
+                    close(pipe_fd[1]);
+                }
+
+                execvp(external_cmd_array[cmd[i]], &external_cmd_array[cmd[i]]);
+                perror("execvp");
+                exit(1);
+            }
+            else
+            {
+                perror("fork");
+            }
+        }
+    }
+}
+
+void extract_external_commands_from_input_string(char *input_string, char *external_cmd_array[])
+{
+    int row = 0;
+    int col = 0;
+    char buff[100];
+
+    for (int i = 0; input_string[i] != '\0'; i++)
+    {
+        if (input_string[i] == ' ')
+        {
+            if (col > 0)
+            {
+                buff[col] = '\0';
+                external_cmd_array[row] = malloc(strlen(buff) + 1);
+                strcpy(external_cmd_array[row], buff);
+                row++;
+                col = 0;
+            }
+        }
+        else
+        {
+            buff[col++] = input_string[i];
+        }
+    }
+
+    // last token
+    if (col > 0)
+    {
+        buff[col] = '\0';
+        external_cmd_array[row] = malloc(strlen(buff) + 1);
+        strcpy(external_cmd_array[row], buff);
+        row++;
+    }
+
+    external_cmd_array[row] = NULL;
+}
+
+void check_rows_and_pipe(char *input_string, int *row, int *pipe_count)
+{
+    int i;
+    *row = 0;
+    *pipe_count = 0;
+
+    for (i = 0; input_string[i] != '\0'; i++)
+    {
+        if (input_string[i] == '|')
+            (*pipe_count)++;
+
+        if (input_string[i] == ' ' && input_string[i + 1] != ' ')
+            (*row)++;
+    }
+
+    (*row)++;
 }

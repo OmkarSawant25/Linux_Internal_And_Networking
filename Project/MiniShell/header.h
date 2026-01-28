@@ -13,7 +13,6 @@
 #include <sys/wait.h>
 #include <stdbool.h>
  
-
 #define BUILTIN		1
 #define EXTERNAL	2
 #define NO_COMMAND  3
@@ -35,12 +34,14 @@ void copy_change(char *prompt, char *input_string);
 int check_command_type(char *command);
 void echo(char *input_string, int status);
 void execute_internal_commands(char *input_string);
+void execute_external_commands(char *input_string);
 void signal_handler(int sig_num);
 void extract_external_commands(char **external_commands);
+void check_rows_and_pipe(char *input_string, int *row, int *pipe_count);
+void extract_external_commands_from_input_string(char *input_string, char *external_cmd_array[]);
 
 bool check_internal_command(char *command);
 bool check_external_command(char *command);
 void free_external_commands(char **external_commands);
-
 
 #endif
