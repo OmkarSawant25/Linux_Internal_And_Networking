@@ -18,7 +18,6 @@ chgrp
 chmod
 chown
 chvt
-clear
 cp
 cpio
 dash
@@ -138,7 +137,6 @@ uncompress
 unicode_start
 vdir
 vmmouse_detect
-wc
 which
 whiptail
 ypdomainname

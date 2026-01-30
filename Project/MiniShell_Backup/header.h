@@ -12,36 +12,23 @@
 #include <signal.h>
 #include <sys/wait.h>
 #include <stdbool.h>
+ 
+#define BUILTIN		1
+#define EXTERNAL	2
+#define NO_COMMAND  3
 
-#define BUILTIN 1
-#define EXTERNAL 2
-#define NO_COMMAND 3
-
-#define ANSI_COLOR_RED "\x1b[31m"
-#define ANSI_COLOR_GREEN "\x1b[32m"
-#define ANSI_COLOR_YELLOW "\x1b[33m"
-#define ANSI_COLOR_BLUE "\x1b[34m"
+#define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_GREEN   "\x1b[32m"
+#define ANSI_COLOR_YELLOW  "\x1b[33m"
+#define ANSI_COLOR_BLUE    "\x1b[34m"
 #define ANSI_COLOR_MAGENTA "\x1b[35m"
-#define ANSI_COLOR_CYAN "\x1b[36m"
-#define ANSI_COLOR_RESET "\x1b[0m"
+#define ANSI_COLOR_CYAN    "\x1b[36m"
+#define ANSI_COLOR_RESET   "\x1b[0m"
 
-extern char *builtins[];
-extern char *external_commands[200];
-extern char input_string[50];
-extern pid_t pid;
-extern int status;
-extern int last_exit_status;
-extern char prompt[25];
-
-typedef struct list
-{
-    pid_t pid;
-    char sleep_command[25];
-    struct list *next;
-} stopped_jobs;
 
 void scan_input(char *prompt, char *input_string);
 char *get_command(char *input_string);
+
 void copy_change(char *prompt, char *input_string);
 
 int check_command_type(char *command);
@@ -59,9 +46,5 @@ void remove_trailing_space(char *input_string);
 bool check_internal_command(char *command);
 bool check_external_command(char *command);
 void free_external_commands(char **external_commands);
-
-void insert_jobs_at_start(stopped_jobs **head);
-void print_jobs(stopped_jobs *head);
-void delete_jobs(stopped_jobs **head);
 
 #endif
