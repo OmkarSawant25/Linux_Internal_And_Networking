@@ -12,7 +12,6 @@ void *thread_fun(void *arg)
         count = 0;
         count = count + 5;
         count = count + 10;
-
         printf("Count Value = %d\n", count);
         // sleep(1);
     }

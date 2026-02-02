@@ -1,3 +1,4 @@
+./a.out
 bash
 bunzip2
 busybox
@@ -42,6 +43,7 @@ fgrep
 findmnt
 fuser
 fusermount
+gcc
 getfacl
 grep
 gunzip
@@ -65,6 +67,7 @@ lowntfs-3g
 ls
 lsblk
 lsmod
+man
 mkdir
 mknod
 mktemp
@@ -136,6 +139,7 @@ umount
 uname
 uncompress
 unicode_start
+vim
 vdir
 vmmouse_detect
 wc
