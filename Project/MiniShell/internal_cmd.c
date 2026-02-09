@@ -102,6 +102,11 @@ void execute_internal_commands(char *input_string)
             // Remove job from jobs list
             delete_jobs(&head);
         }
+        else
+        {
+            // No stopped job available
+            printf(ANSI_COLOR_YELLOW "fg: no current job\n" ANSI_COLOR_RESET);
+        }
     }
 
     // Resume stopped job in background
