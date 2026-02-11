@@ -45,31 +45,34 @@ int main()
     listen(sock_fd, SERVER_LENGTH);
     printf("LISTENING: relay server is listening\n");
 
-    data_sock_fd = accept(sock_fd, (struct sockaddr *)NULL, NULL);
-    printf("ACCEPTED: relay server accepted connection\n");
-
-    // recv
-    if (recv(data_sock_fd, &opr, sizeof(opr), 0) <= 0)
+    while (1)
     {
-        perror("recv");
+
+        data_sock_fd = accept(sock_fd, (struct sockaddr *)NULL, NULL);
+        printf("ACCEPTED: relay server accepted connection\n");
+
+        // recv
+        if (recv(data_sock_fd, &opr, sizeof(opr), 0) <= 0)
+        {
+            perror("recv");
+            close(data_sock_fd);
+            return 1;
+        }
+
+        int port;
+
+        if (opr == '+')
+            port = SERVER_PORT_ADD;
+        else if (opr == '-')
+            port = SERVER_PORT_SUB;
+        else if (opr == '*')
+            port = SERVER_PORT_MUL;
+        else if (opr == '/')
+            port = SERVER_PORT_DIV;
+        else if (opr == '%')
+            port = SERVER_PORT_MOD;
+
+        send(data_sock_fd, &port, sizeof(port), 0);
         close(data_sock_fd);
-        return 1;
     }
-
-    int port;
-
-    if (opr == '+')
-        port = SERVER_PORT_ADD;
-    else if (opr == '-')
-        port = SERVER_PORT_SUB;
-    else if (opr == '*')
-        port = SERVER_PORT_MUL;
-    else if (opr == '/')
-        port = SERVER_PORT_DIV;
-    else if (opr == '%')
-        port = SERVER_PORT_MOD;
-
-    send(data_sock_fd, &port, sizeof(port), 0);
-    close(data_sock_fd);
 }
-

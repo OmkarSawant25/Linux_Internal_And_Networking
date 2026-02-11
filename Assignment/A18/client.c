@@ -23,7 +23,7 @@ int main()
     printf("Enter num2 : ");
     scanf("%d", &num2);
     // getchar();
-    printf("Enter arithmetic operator :");
+    printf("Enter arithmetic operator : ");
     scanf(" %c", &opr);
 
     int sock_fd = socket(AF_INET, SOCK_STREAM, 0);

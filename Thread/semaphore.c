@@ -17,7 +17,6 @@ void *thread_function(void *arg)
     {
         printf("Thread %d running %d times \n", n, i + 1);
     }
-
     sem_post(&my_count); // Step 4
     return NULL;
 }

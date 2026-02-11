@@ -20,20 +20,25 @@ int main()
 
     // socket
     sock_fd = socket(AF_INET, SOCK_STREAM, 0);
+    printf("INFO: created server socket\n");
 
     // bind
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(SERVER_PORT);
     serv_addr.sin_addr.s_addr = inet_addr(SERVER_IP);
+
+    int flag = 1;
+    setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag));
+
     bind(sock_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
 
     // listen()
     listen(sock_fd, 1);
+    printf("LISTENING: plus server is listening\n");
 
     // accept
     data_sock_fd = accept(sock_fd, (struct sockaddr *)NULL, NULL);
-
-    printf("Inside Server of Addition\n");
+    printf("ACCEPTED: plus server accepted connection\n");
 
     // recv num1
     if (recv(data_sock_fd, &num1, sizeof(num1), 0) <= 0)
@@ -52,6 +57,11 @@ int main()
     }
 
     result = num1 + num2;
+
+    printf("Client data : %d  %d  %c\n", num1, num2, '+');
+    printf("Result is %d\n", result);
+    printf("Sending result to client...\n");
+
     send(data_sock_fd, &result, sizeof(result), 0);
     close(data_sock_fd);
     close(sock_fd);
