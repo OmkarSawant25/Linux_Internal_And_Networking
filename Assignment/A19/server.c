@@ -75,12 +75,10 @@ int main()
 
         while (1)
         {
-            sendto(sock_fd, &data_var, sizeof(data_var), 0,
-                   (struct sockaddr *)&client_addr, client_len);
+            sendto(sock_fd, &data_var, sizeof(data_var), 0, (struct sockaddr *)&client_addr, client_len);
 
             ack_packet ack;
-            recvfrom(sock_fd, &ack, sizeof(ack), 0,
-                     (struct sockaddr *)&client_addr, &client_len);
+            recvfrom(sock_fd, &ack, sizeof(ack), 0, (struct sockaddr *)&client_addr, &client_len);
 
             if (ack.packet_no == packet)
                 break;
