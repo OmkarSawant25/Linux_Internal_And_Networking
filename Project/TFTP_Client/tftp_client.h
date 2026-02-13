@@ -1,8 +1,7 @@
 #ifndef TFTP_CLIENT_H
 #define TFTP_CLIENT_H
 
-typedef struct
-{
+typedef struct {
     int sockfd;
     struct sockaddr_in server_addr;
     socklen_t server_len;
@@ -15,6 +14,7 @@ void put_file(tftp_client_t *client, char *filename);
 void get_file(tftp_client_t *client, char *filename);
 void disconnect(tftp_client_t *client);
 void process_command(tftp_client_t *client, char *command);
+
 
 void send_request(int sockfd, struct sockaddr_in server_addr, char *filename, int opcode);
 void receive_request(int sockfd, struct sockaddr_in server_addr, char *filename, int opcode);

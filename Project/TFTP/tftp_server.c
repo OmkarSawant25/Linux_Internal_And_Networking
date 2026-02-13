@@ -18,6 +18,10 @@ int main()
     socklen_t client_len = sizeof(client_addr);
     tftp_packet packet;
 
+    memset(&server_addr, 0, sizeof(server_addr));
+	memset(&client_addr, 0, sizeof(client_addr));
+    memset(&packet,0,sizeof(packet));
+    
     // Create UDP socket
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 
@@ -55,6 +59,7 @@ void handle_client(int sockfd, struct sockaddr_in client_addr, socklen_t client_
 {
     // Extract the TFTP operation (read or write) from the received packet
     // and call send_file or receive_file accordingly
+
     int opcode = ntohs(packet->opcode);
 
     if (opcode == WRQ)
@@ -76,7 +81,8 @@ void handle_client(int sockfd, struct sockaddr_in client_addr, socklen_t client_
             error_packet.opcode = htons(ERROR);
             error_packet.body.error_packet.error_code = htons(2); // Access violation
 
-            strcpy(error_packet.body.error_packet.error_msg, "File open failed");
+            strncpy(error_packet.body.error_packet.error_msg, "File open failed", sizeof(error_packet.body.error_packet.error_msg) - 1);
+
             sendto(sockfd, &error_packet, sizeof(error_packet), 0, (struct sockaddr *)&client_addr, client_len);
             return;
         }
@@ -84,7 +90,7 @@ void handle_client(int sockfd, struct sockaddr_in client_addr, socklen_t client_
         printf("File opened successfully\n");
         close(fd);
 
-        // Send ACK block
+        // Send ACK block 0
         tftp_packet ack_packet;
         memset(&ack_packet, 0, sizeof(ack_packet));
 
@@ -94,6 +100,9 @@ void handle_client(int sockfd, struct sockaddr_in client_addr, socklen_t client_
         sendto(sockfd, &ack_packet, sizeof(ack_packet), 0, (struct sockaddr *)&client_addr, client_len);
 
         printf("Sent ACK block 0\n");
+
+        close(fd);
+        receive_file(sockfd, client_addr, client_len, filename);
     }
 }
 

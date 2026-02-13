@@ -80,6 +80,11 @@ void process_command(tftp_client_t *client, char *command)
             printf("ERROR: File is not present\n");
         }
     }
+    else if (strcmp("get", cmd) == 0)
+    {
+        char *file_name = strtok(NULL, " ");
+        get_file(client, file_name);
+    }
 }
 
 // This function is to initialize socket with given server IP, no packets sent to server in this function
@@ -87,46 +92,33 @@ void connect_to_server(tftp_client_t *client, char *ip, int port)
 {
     // Create UDP socket
     client->sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-    if (client->sockfd < 0)
-    {
-        perror("socket");
-        return;
-    }
+
     // Set socket timeout option
+
     // Set up server address
-
-    memset(&client->server_addr, 0, sizeof(client->server_addr));
-
     client->server_addr.sin_family = AF_INET;
-    client->server_addr.sin_port = htons(port);
-    // client->server_addr.sin_addr.s_addr = inet_addr(ip); // It converts string IP -> 32-bit network order IP
-
-    if (inet_pton(AF_INET, ip, &client->server_addr.sin_addr.s_addr) != 1)
-    {
-        perror("Invalid");
-    }
+    client->server_addr.sin_port = htons(PORT);
+    client->server_addr.sin_addr.s_addr = inet_addr(ip);
 
     strcpy(client->server_ip, ip);
     client->server_ip[strlen(ip)] = '\0';
-    client->server_len = strlen(client->server_ip);
+    client->server_len = sizeof(client->server_addr);
 }
 
 void put_file(tftp_client_t *client, char *filename)
 {
     if (client->sockfd <= 0)
     {
-        printf("ERROR: Not connected to server\n");
+        printf("Not connected to server\n");
         return;
     }
-
-    // Send WRQ request and send file
     send_request(client->sockfd, client->server_addr, filename, WRQ);
-    send_file(client->sockfd, client->server_addr, sizeof(client->server_addr), filename);
 }
 
 void get_file(tftp_client_t *client, char *filename)
 {
     // Send RRQ and recive file
+    send_request(client->sockfd, client->server_addr, filename, RRQ);
 }
 
 void disconnect(tftp_client_t *client)
@@ -140,57 +132,74 @@ void send_request(int sockfd, struct sockaddr_in server_addr, char *filename, in
     memset(&packet, 0, sizeof(packet));
 
     packet.opcode = htons(opcode);
+    strcpy(packet.body.request.filename, filename);
 
-    strncpy(packet.body.request.filename, filename, sizeof(packet.body.request.filename) - 1);
+    printf("File name is : %s\n", filename);
 
-    printf("Sending WRQ to server...\n");
+    if (opcode == WRQ)
+        printf("Sending WRQ to server...\n");
+    else
+        printf("Sending RRQ to server...\n");
 
-    if (sendto(sockfd, &packet, sizeof(packet), 0, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
-    {
-        perror("sendto");
-    }
-    receive_request(sockfd, server_addr, filename, WRQ);
-
+    sendto(sockfd, &packet, sizeof(packet), 0, (struct sockaddr *)&server_addr, sizeof(server_addr));
+    receive_request(sockfd, server_addr, filename, opcode);
 }
 
-void receive_request(int sockfd, struct sockaddr_in server_addr, char *filename, int opcode)
+void receive_request(int sockfd,
+                     struct sockaddr_in server_addr,
+                     char *filename,
+                     int opcode)
 {
     tftp_packet response;
     socklen_t len = sizeof(server_addr);
 
-    memset(&response, 0, sizeof(response));
-
-    int n = recvfrom(sockfd, &response, sizeof(response), 0, (struct sockaddr *)&server_addr, &len);
-
-    if (n < 0)
+    /* ================= WRQ ================= */
+    if (opcode == WRQ)
     {
-        perror("recvfrom failed");
-        return;
-    }
+        int n = recvfrom(sockfd,
+                         &response,
+                         sizeof(response),
+                         0,
+                         (struct sockaddr *)&server_addr,
+                         &len);
 
-    int recv_opcode = ntohs(response.opcode);
-
-    if (recv_opcode == ACK)
-    {
-        int block = ntohs(response.body.ack_packet.block_number);
-
-        if (block == 0)
+        if (n < 0)
         {
-            printf("Received ACK block 0\n");
-            printf("Now ready to send DATA\n");
+            perror("recvfrom failed");
+            return;
+        }
+
+        if (ntohs(response.opcode) == ERROR)
+        {
+            printf("Server ERROR: %s\n",
+                   response.body.error_packet.error_msg);
+            return;
+        }
+
+        if (ntohs(response.opcode) == ACK &&
+            ntohs(response.body.ack_packet.block_number) == 0)
+        {
+            printf("Server ready. Starting file upload...\n");
+            send_file(sockfd, server_addr, len, filename);
+        }
+        else
+        {
+            printf("Invalid ACK received\n");
         }
     }
-    else if (recv_opcode == ERROR)
-    {
-        int err = ntohs(response.body.error_packet.error_code);
 
-        printf("Server ERROR %d: %s\n", err, response.body.error_packet.error_msg);
-    }
-    else
+    /* ================= RRQ ================= */
+    else if (opcode == RRQ)
     {
-        printf("Unexpected packet received\n");
+        printf("Receiving file...\n");
+
+        /* DO NOT recv here */
+        receive_file(sockfd, server_addr, len, filename);
+
+        printf("File download completed\n");
     }
 }
+
 
 void print_help()
 {
