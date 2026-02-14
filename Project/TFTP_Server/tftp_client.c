@@ -10,53 +10,61 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+// Function declarations
 bool validate_ip_address(char *ip);
 bool validate_file_present(char *file_name);
 
 int main()
 {
-    char command[256];
-    tftp_client_t client;
-    memset(&client, 0, sizeof(client)); // Initialize client structure
+    char command[256];                  // Buffer to store user command
+    tftp_client_t client;               // Structure to hold client details
+    memset(&client, 0, sizeof(client)); // Initialize all values to 0
 
     printf("Type help to get supported features\n");
 
-    // Main loop for command-line interface
+    // Infinite loop for command line interface
     while (1)
     {
         printf("tftp> ");
-        fgets(command, sizeof(command), stdin);
+        fgets(command, sizeof(command), stdin); // Read command from user
 
-        // Remove newline character
+        // Remove newline character added by fgets
         command[strcspn(command, "\n")] = 0;
 
-        // Process the command
+        // Send command to processor function
         process_command(&client, command);
     }
 
     return 0;
 }
 
-// Function to process commands
+// Function to process user commands
 void process_command(tftp_client_t *client, char *command)
 {
-    char *cmd = strtok(command, " ");
+    char *cmd = strtok(command, " "); // Extract first word (command)
 
     if (cmd == NULL)
         return;
 
+    // If user types help
     if (strcmp("help", cmd) == 0)
     {
         print_help();
     }
+
+    // If user types quit or bye
     else if (strcmp("bye", cmd) == 0 || strcmp("quit", cmd) == 0)
     {
-        exit(1);
+        exit(1); // Exit program
     }
+
+    // If user types connect <ip>
     else if (strcmp("connect", cmd) == 0)
     {
-        char *ip = strtok(NULL, " ");
-        bool valid = validate_ip_address(ip);
+        char *ip = strtok(NULL, " "); // Get IP address
+
+        bool valid = validate_ip_address(ip); // Validate IP format
+
         if (valid)
         {
             connect_to_server(client, ip, PORT);
@@ -67,72 +75,91 @@ void process_command(tftp_client_t *client, char *command)
             printf("Usage: connect <ip>\n");
         }
     }
+
+    // If user types put <filename>
     else if (strcmp("put", cmd) == 0)
     {
-        char *file_name = strtok(NULL, " ");
-        bool valid_file = validate_file_present(file_name);
+        char *file_name = strtok(NULL, " "); // Get filename
+
+        bool valid_file = validate_file_present(file_name); // Check file exists
+
         if (valid_file)
         {
-            put_file(client, file_name);
+            put_file(client, file_name); // Start file upload
         }
         else
         {
             printf("ERROR: File is not present\n");
         }
     }
+
+    // If user types get <filename>
     else if (strcmp("get", cmd) == 0)
     {
-        char *file_name = strtok(NULL, " ");
-        get_file(client, file_name);
+        char *file_name = strtok(NULL, " "); // Get filename
+
+        get_file(client, file_name); // Start file download
+    }
+
+    else if (strcmp("mode", cmd) == 0)
+    {
+        char *mode_name = strtok(NULL, " "); // Get filename
     }
 }
 
-// This function is to initialize socket with given server IP, no packets sent to server in this function
+// This function only creates socket and stores server details
+// It does NOT send any packet to server
 void connect_to_server(tftp_client_t *client, char *ip, int port)
 {
     // Create UDP socket
     client->sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 
-    // Set socket timeout option
-
-    // Set up server address
+    // Fill server address details
     client->server_addr.sin_family = AF_INET;
-    client->server_addr.sin_port = htons(PORT);
-    client->server_addr.sin_addr.s_addr = inet_addr(ip);
+    client->server_addr.sin_port = htons(PORT);          // Convert port to network byte order
+    client->server_addr.sin_addr.s_addr = inet_addr(ip); // Convert IP string to binary
 
-    strcpy(client->server_ip, ip);
+    strcpy(client->server_ip, ip); // Store IP in structure
     client->server_ip[strlen(ip)] = '\0';
-    client->server_len = sizeof(client->server_addr);
+
+    client->server_len = sizeof(client->server_addr); // Store size of address structure
 }
 
+// Function to send file to server
 void put_file(tftp_client_t *client, char *filename)
 {
+    // Check if socket is created
     if (client->sockfd <= 0)
     {
         printf("Not connected to server\n");
         return;
     }
+
+    // Send WRQ (Write Request) to server
     send_request(client->sockfd, client->server_addr, filename, WRQ);
 }
 
+// Function to receive file from server
 void get_file(tftp_client_t *client, char *filename)
 {
-    // Send RRQ and recive file
+    // Send RRQ (Read Request) to server
     send_request(client->sockfd, client->server_addr, filename, RRQ);
 }
 
 void disconnect(tftp_client_t *client)
 {
-    // close fd
+    // Close socket
+    close(client->sockfd);
 }
 
+// Function to send RRQ or WRQ packet to server
 void send_request(int sockfd, struct sockaddr_in server_addr, char *filename, int opcode)
 {
     tftp_packet packet;
-    memset(&packet, 0, sizeof(packet));
+    memset(&packet, 0, sizeof(packet)); // Clear packet memory
 
-    packet.opcode = htons(opcode);
-    strcpy(packet.body.request.filename, filename);
+    packet.opcode = htons(opcode);                  // Convert opcode to network byte order
+    strcpy(packet.body.request.filename, filename); // Copy filename
 
     printf("File name is : %s\n", filename);
 
@@ -141,27 +168,24 @@ void send_request(int sockfd, struct sockaddr_in server_addr, char *filename, in
     else
         printf("Sending RRQ to server...\n");
 
+    // Send packet to server using UDP
     sendto(sockfd, &packet, sizeof(packet), 0, (struct sockaddr *)&server_addr, sizeof(server_addr));
+
+    // Wait for server response
     receive_request(sockfd, server_addr, filename, opcode);
 }
 
-void receive_request(int sockfd,
-                     struct sockaddr_in server_addr,
-                     char *filename,
-                     int opcode)
+// Function to handle server response
+void receive_request(int sockfd, struct sockaddr_in server_addr, char *filename, int opcode)
 {
     tftp_packet response;
     socklen_t len = sizeof(server_addr);
 
-    /* ================= WRQ ================= */
+    // If Write Request
     if (opcode == WRQ)
     {
-        int n = recvfrom(sockfd,
-                         &response,
-                         sizeof(response),
-                         0,
-                         (struct sockaddr *)&server_addr,
-                         &len);
+        // Wait for ACK from server
+        int n = recvfrom(sockfd, &response, sizeof(response), 0, (struct sockaddr *)&server_addr, &len);
 
         if (n < 0)
         {
@@ -169,18 +193,18 @@ void receive_request(int sockfd,
             return;
         }
 
-        if (ntohs(response.opcode) == ERROR)
-        {
-            printf("Server ERROR: %s\n",
-                   response.body.error_packet.error_msg);
-            return;
-        }
-
-        if (ntohs(response.opcode) == ACK &&
-            ntohs(response.body.ack_packet.block_number) == 0)
+        // If ACK with block number 0, server is ready
+        if (ntohs(response.opcode) == ACK && ntohs(response.body.ack_packet.block_number) == 0)
         {
             printf("Server ready. Starting file upload...\n");
             send_file(sockfd, server_addr, len, filename);
+        }
+
+        // If server sends error
+        else if (ntohs(response.opcode) == ERROR)
+        {
+            printf("Server ERROR: %s\n", response.body.error_packet.error_msg);
+            return;
         }
         else
         {
@@ -188,19 +212,16 @@ void receive_request(int sockfd,
         }
     }
 
-    /* ================= RRQ ================= */
+    // If Read Request
     else if (opcode == RRQ)
     {
         printf("Receiving file...\n");
-
-        /* DO NOT recv here */
         receive_file(sockfd, server_addr, len, filename);
-
         printf("File download completed\n");
     }
 }
 
-
+// Prints available commands
 void print_help()
 {
     printf("connect <server-ip>    : Connect to server\n");
@@ -210,6 +231,7 @@ void print_help()
     printf("bye / quit             : Exit the application\n");
 }
 
+// Validate IP format (returns true if valid IPv4)
 bool validate_ip_address(char *ip)
 {
     if (ip == NULL)
@@ -217,17 +239,20 @@ bool validate_ip_address(char *ip)
 
     struct sockaddr_in sa;
 
-    int result = inet_pton(AF_INET, ip, &(sa.sin_addr)); // stores binary IP inside memory I provide
+    // Convert IP string to binary and check validity
+    int result = inet_pton(AF_INET, ip, &(sa.sin_addr));
 
     return (result == 1);
 }
 
+// Check whether file exists or not
 bool validate_file_present(char *file_name)
 {
     int fd = open(file_name, O_RDONLY);
+
     if (fd == -1)
         return false;
 
-    close(fd);
+    close(fd); // Close file if opened
     return true;
 }

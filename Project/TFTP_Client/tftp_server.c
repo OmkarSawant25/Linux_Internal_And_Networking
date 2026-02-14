@@ -43,7 +43,7 @@ int main()
 
     while (1)
     {
-        client_len = sizeof(client_addr); // 🔹 Reset length each time
+        client_len = sizeof(client_addr); // Reset length each time
 
         int n = recvfrom(sockfd, &packet, BUFFER_SIZE, 0, (struct sockaddr *)&client_addr, &client_len);
 
