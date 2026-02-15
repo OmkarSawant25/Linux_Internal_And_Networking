@@ -11,6 +11,9 @@
 
 void handle_client(int sockfd, struct sockaddr_in client_addr, socklen_t client_len, tftp_packet *packet);
 
+char mode[10];
+int data_size;
+
 int main()
 {
     int sockfd;
@@ -68,7 +71,22 @@ void handle_client(int sockfd, struct sockaddr_in client_addr, socklen_t client_
     if (opcode == WRQ)
     {
         char *filename = packet->body.request.filename;
+
         printf("WRQ received for file: %s\n", filename);
+        printf("Mode received: %s\n", packet->body.request.mode);
+
+        strcpy(mode, packet->body.request.mode);
+
+        if (strcmp(mode, "default") == 0)
+            data_size = 512;
+        else if (strcmp(mode, "octet") == 0)
+            data_size = 1;
+        else if (strcmp(mode, "netascii") == 0)
+            data_size = 128;
+        else
+            data_size = 512;
+
+        printf("Server block size set to %d\n", data_size);
 
         int fd = open(filename, O_CREAT | O_WRONLY | O_EXCL, 0644);
 
@@ -99,7 +117,8 @@ void handle_client(int sockfd, struct sockaddr_in client_addr, socklen_t client_
         ack.opcode = htons(ACK);
         ack.body.ack_packet.block_number = htons(0);
 
-        sendto(sockfd, &ack, sizeof(ack), 0, (struct sockaddr *)&client_addr, client_len);
+        sendto(sockfd, &ack, sizeof(ack), 0,
+               (struct sockaddr *)&client_addr, client_len);
 
         printf("Sent ACK(0). Ready to receive file.\n");
 
@@ -110,6 +129,19 @@ void handle_client(int sockfd, struct sockaddr_in client_addr, socklen_t client_
     else if (opcode == RRQ)
     {
         char *filename = packet->body.request.filename;
+
+        printf("Mode received: %s\n", packet->body.request.mode);
+        strcpy(mode, packet->body.request.mode);
+
+        if (strcmp(mode, "default") == 0)
+            data_size = 512;
+        else if (strcmp(mode, "octet") == 0)
+            data_size = 1;
+        // else if (strcmp(mode, "netascii") == 0)
+        else
+            data_size = 512;
+
+        printf("Server block size set to %d\n", data_size);
         printf("RRQ received for file: %s\n", filename);
 
         int fd = open(filename, O_RDONLY);

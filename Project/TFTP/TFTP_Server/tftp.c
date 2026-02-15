@@ -1,9 +1,17 @@
-/* Common file for server & client */
+/* Common file for both server & client */
 
 #include "tftp.h"
 #include <fcntl.h>
 
-// Function to send a file (used by both client & server)
+// These variables are defined in client/server file
+// We are just accessing them here
+extern char mode[10];
+extern int data_size;
+
+/* ===========================================================
+   Function: send_file()
+   Purpose : Sends file data block-by-block to receiver
+   =========================================================== */
 void send_file(int sockfd, struct sockaddr_in client_addr, socklen_t client_len, char *filename)
 {
     tftp_packet packet, ack_packet;
@@ -17,16 +25,16 @@ void send_file(int sockfd, struct sockaddr_in client_addr, socklen_t client_len,
         return;
     }
 
-    int block_number = 1;  // TFTP block numbers start from 1
+    int block_number = 1;   // TFTP block numbers start from 1
     int bytes_read;
 
-    // Loop until file sending is complete
+    // Keep sending data until file is completely sent
     while (1)
     {
-        memset(&packet, 0, sizeof(packet)); // Clear packet memory
+        memset(&packet, 0, sizeof(packet)); // Clear previous packet data
 
-        // Read maximum 512 bytes from file (TFTP data size)
-        bytes_read = read(fd, packet.body.data_packet.data, 512);
+        // Read data_size bytes from file (dynamic block size)
+        bytes_read = read(fd, packet.body.data_packet.data, data_size);
 
         if (bytes_read < 0)
         {
@@ -38,10 +46,12 @@ void send_file(int sockfd, struct sockaddr_in client_addr, socklen_t client_len,
         // Set packet type to DATA
         packet.opcode = htons(DATA);
 
-        // Set current block number
-        packet.body.data_packet.block_number = htons(block_number);
+        // Set block number (convert to network byte order)
+        packet.body.data_packet.block_number =
+            htons(block_number);
 
-        // Send DATA packet (4 bytes header + actual data size)
+        // Send DATA packet
+        // Header = 4 bytes (opcode + block number)
         sendto(sockfd, &packet, 4 + bytes_read, 0, (struct sockaddr *)&client_addr, client_len);
 
         printf("Sent DATA block %d (%d bytes)\n", block_number, bytes_read);
@@ -51,18 +61,19 @@ void send_file(int sockfd, struct sockaddr_in client_addr, socklen_t client_len,
 
         recvfrom(sockfd, &ack_packet, sizeof(ack_packet), 0, (struct sockaddr *)&client_addr, &client_len);
 
-        // If ACK is wrong, resend same block
+        // If ACK is wrong, resend the same block
         while (ntohs(ack_packet.opcode) != ACK || ntohs(ack_packet.body.ack_packet.block_number) != block_number)
         {
             printf("Resending block %d\n", block_number);
+
             sendto(sockfd, &packet, 4 + bytes_read, 0, (struct sockaddr *)&client_addr, client_len);
 
-            memset(&ack_packet, 0, sizeof(ack_packet));
             recvfrom(sockfd, &ack_packet, sizeof(ack_packet), 0, (struct sockaddr *)&client_addr, &client_len);
         }
 
-        // If last packet (less than 512 bytes), file sending is complete
-        if (bytes_read < 512)
+        // If bytes_read is less than block size,
+        // this means it is the last packet
+        if (bytes_read < data_size)
             break;
 
         block_number++;  // Move to next block
@@ -70,16 +81,21 @@ void send_file(int sockfd, struct sockaddr_in client_addr, socklen_t client_len,
 
     printf("File transfer completed successfully\n");
 
-    close(fd); // Close file
+    close(fd); // Close file after transfer
 }
 
 
-// Function to receive a file (used by both client & server)
+/* ===========================================================
+   Function: receive_file()
+   Purpose : Receives file data block-by-block from sender
+   =========================================================== */
 void receive_file(int sockfd, struct sockaddr_in client_addr, socklen_t client_len, char *filename)
 {
     tftp_packet packet, ack_packet;
 
-    // Open file for writing (create if not exists, overwrite if exists)
+    // Open file for writing
+    // Create file if not present
+    // Truncate if already exists
     int fd = open(filename, O_CREAT | O_WRONLY | O_TRUNC, 0644);
 
     if (fd < 0)
@@ -88,15 +104,15 @@ void receive_file(int sockfd, struct sockaddr_in client_addr, socklen_t client_l
         return;
     }
 
-    int expected_block = 1; // We expect first DATA block to be 1
+    int expected_block = 1; // First DATA block should be 1
     int n;
 
-    // Loop until full file is received
+    // Keep receiving packets until file transfer completes
     while (1)
     {
-        memset(&packet, 0, sizeof(packet)); // Clear packet buffer
+        memset(&packet, 0, sizeof(packet)); // Clear old packet data
 
-        // Receive DATA packet from sender
+        // Receive DATA packet
         n = recvfrom(sockfd, &packet, sizeof(packet), 0, (struct sockaddr *)&client_addr, &client_len);
 
         if (n < 0)
@@ -116,16 +132,18 @@ void receive_file(int sockfd, struct sockaddr_in client_addr, socklen_t client_l
 
         int block_number = ntohs(packet.body.data_packet.block_number);
 
-        // If received correct block
+        // Process only if block number matches expected block
         if (block_number == expected_block)
         {
-            // Actual data size = total received bytes - 4 bytes header
-            int data_size = n - 4;
+            // Actual data size = total received bytes - 4 header bytes
+            int received_size = n - 4;
 
-            // Write received data into file
-            write(fd, packet.body.data_packet.data, data_size);
+            // Write received data to file
+            write(fd, packet.body.data_packet.data, received_size);
 
-            printf("Received DATA block %d (%d bytes)\n", block_number, data_size);
+            printf("Received DATA block %d (%d bytes)\n",
+                   block_number,
+                   received_size);
 
             // Prepare ACK packet
             memset(&ack_packet, 0, sizeof(ack_packet));
@@ -138,8 +156,9 @@ void receive_file(int sockfd, struct sockaddr_in client_addr, socklen_t client_l
 
             expected_block++; // Expect next block
 
-            // If last block received (<512 bytes), transfer complete
-            if (data_size < 512)
+            // If received data is less than block size,
+            // this means this was the last packet
+            if (received_size < data_size)
             {
                 break;
             }
@@ -148,5 +167,5 @@ void receive_file(int sockfd, struct sockaddr_in client_addr, socklen_t client_l
 
     printf("File received successfully\n");
 
-    close(fd); // Close file
+    close(fd); // Close file after transfer
 }

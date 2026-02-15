@@ -14,11 +14,17 @@
 bool validate_ip_address(char *ip);
 bool validate_file_present(char *file_name);
 
+char mode[10];
+int data_size;
+
 int main()
 {
     char command[256];                  // Buffer to store user command
     tftp_client_t client;               // Structure to hold client details
     memset(&client, 0, sizeof(client)); // Initialize all values to 0
+
+    strcpy(mode, "default");
+    data_size = 512;
 
     printf("Type help to get supported features\n");
 
@@ -103,7 +109,34 @@ void process_command(tftp_client_t *client, char *command)
 
     else if (strcmp("mode", cmd) == 0)
     {
-        char *mode_name = strtok(NULL, " "); // Get filename
+        char *mode_name = strtok(NULL, " ");
+
+        if (mode_name == NULL)
+        {
+            printf("Current mode is %s\n", mode);
+            return;
+        }
+
+        if (strcmp(mode_name, "default") == 0)
+        {
+            strcpy(mode, "default");
+            data_size = 512;
+        }
+        else if (strcmp(mode_name, "octet") == 0)
+        {
+            strcpy(mode, "octet");
+            data_size = 1;
+        }
+        else if (strcmp(mode_name, "netascii") == 0)
+        {
+        }
+        else
+        {
+            printf("Unsupported mode\n");
+            return;
+        }
+
+        printf("Mode changed to %s | Block size = %d\n", mode, data_size);
     }
 }
 
@@ -160,7 +193,7 @@ void send_request(int sockfd, struct sockaddr_in server_addr, char *filename, in
 
     packet.opcode = htons(opcode);                  // Convert opcode to network byte order
     strcpy(packet.body.request.filename, filename); // Copy filename
-
+    strcpy(packet.body.request.mode, mode);
     printf("File name is : %s\n", filename);
 
     if (opcode == WRQ)

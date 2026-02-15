@@ -48,6 +48,9 @@ typedef struct {
     } body;
 } tftp_packet;
 
+extern char mode[10];
+extern int data_size;
+
 void send_file(int sockfd, struct sockaddr_in client_addr, socklen_t client_len, char *filename);
 void receive_file(int sockfd, struct sockaddr_in client_addr, socklen_t client_len, char *filename);
 
