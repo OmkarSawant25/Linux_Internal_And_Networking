@@ -46,7 +46,7 @@ int main()
 
     while (1)
     {
-        client_len = sizeof(client_addr); // 🔹 Reset length each time
+        client_len = sizeof(client_addr); //  Reset length each time
 
         int n = recvfrom(sockfd, &packet, BUFFER_SIZE, 0, (struct sockaddr *)&client_addr, &client_len);
 
@@ -117,8 +117,7 @@ void handle_client(int sockfd, struct sockaddr_in client_addr, socklen_t client_
         ack.opcode = htons(ACK);
         ack.body.ack_packet.block_number = htons(0);
 
-        sendto(sockfd, &ack, sizeof(ack), 0,
-               (struct sockaddr *)&client_addr, client_len);
+        sendto(sockfd, &ack, sizeof(ack), 0, (struct sockaddr *)&client_addr, client_len);
 
         printf("Sent ACK(0). Ready to receive file.\n");
 

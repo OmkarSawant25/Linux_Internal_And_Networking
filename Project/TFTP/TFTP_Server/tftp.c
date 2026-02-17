@@ -47,8 +47,7 @@ void send_file(int sockfd, struct sockaddr_in client_addr, socklen_t client_len,
         packet.opcode = htons(DATA);
 
         // Set block number (convert to network byte order)
-        packet.body.data_packet.block_number =
-            htons(block_number);
+        packet.body.data_packet.block_number = htons(block_number);
 
         // Send DATA packet
         // Header = 4 bytes (opcode + block number)
@@ -65,9 +64,7 @@ void send_file(int sockfd, struct sockaddr_in client_addr, socklen_t client_len,
         while (ntohs(ack_packet.opcode) != ACK || ntohs(ack_packet.body.ack_packet.block_number) != block_number)
         {
             printf("Resending block %d\n", block_number);
-
             sendto(sockfd, &packet, 4 + bytes_read, 0, (struct sockaddr *)&client_addr, client_len);
-
             recvfrom(sockfd, &ack_packet, sizeof(ack_packet), 0, (struct sockaddr *)&client_addr, &client_len);
         }
 
@@ -141,9 +138,7 @@ void receive_file(int sockfd, struct sockaddr_in client_addr, socklen_t client_l
             // Write received data to file
             write(fd, packet.body.data_packet.data, received_size);
 
-            printf("Received DATA block %d (%d bytes)\n",
-                   block_number,
-                   received_size);
+            printf("Received DATA block %d (%d bytes)\n", block_number, received_size);
 
             // Prepare ACK packet
             memset(&ack_packet, 0, sizeof(ack_packet));

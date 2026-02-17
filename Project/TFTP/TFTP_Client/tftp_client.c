@@ -150,11 +150,10 @@ void connect_to_server(tftp_client_t *client, char *ip, int port)
     // Fill server address details
     client->server_addr.sin_family = AF_INET;
     client->server_addr.sin_port = htons(PORT);          // Convert port to network byte order
-    client->server_addr.sin_addr.s_addr = inet_addr(ip); // Convert IP string to binary
+    client->server_addr.sin_addr.s_addr = inet_addr(ip); // Convert IP string to binary / network byte order
 
     strcpy(client->server_ip, ip); // Store IP in structure
     client->server_ip[strlen(ip)] = '\0';
-
     client->server_len = sizeof(client->server_addr); // Store size of address structure
 }
 
@@ -260,7 +259,7 @@ void print_help()
     printf("connect <server-ip>    : Connect to server\n");
     printf("get <file-name>        : Receive a file from server\n");
     printf("put <file-name>        : Send a file to the server\n");
-    printf("mode                   : Transfer mode(s) (octet, netascii or mail)\n");
+    printf("mode                   : Transfer mode(s) (octet, netascii or default)\n");
     printf("bye / quit             : Exit the application\n");
 }
 
