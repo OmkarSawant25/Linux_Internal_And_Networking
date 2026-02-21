@@ -1,0 +1,24 @@
+omkarsawant@LAPTOP-95PGA7VI:~/LI/Project/TFTP/TFTP_Client$ cc *
+omkarsawant@LAPTOP-95PGA7VI:~/LI/Project/TFTP/TFTP_Client$ ./a.out 
+Type help to get supported features
+tftp> connect 127.0.0.1
+INFO: Connected to server
+tftp> mode netascii
+Mode changed to default | Block size = 512
+tftp> put new.txt
+File name is : new.txt
+Sending WRQ to server...
+Server ready. Starting file upload...
+Inside octet
+Sent DATA block 1 (380 bytes)
+File transfer completed successfully
+tftp> mode netascii 
+Mode changed to default | Block size = 512
+tftp> put new.txt
+File name is : new.txt
+Sending WRQ to server...
+Server ready. Starting file upload...
+Inside octet
+Sent DATA block 1 (380 bytes)
+File transfer completed successfully
+tftp> ^C

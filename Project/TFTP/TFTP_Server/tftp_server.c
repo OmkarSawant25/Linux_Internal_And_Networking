@@ -26,7 +26,7 @@ int main()
     if (sockfd < 0)
     {
         perror("socket failed");
-        exit(EXIT_FAILURE);
+        exit(1);
     }
 
     // Set up server address
@@ -39,7 +39,7 @@ int main()
     {
         perror("bind failed");
         close(sockfd);
-        exit(EXIT_FAILURE);
+        exit(1);
     }
 
     printf("TFTP Server listening on port %d...\n", PORT);
@@ -82,7 +82,7 @@ void handle_client(int sockfd, struct sockaddr_in client_addr, socklen_t client_
         else if (strcmp(mode, "octet") == 0)
             data_size = 1;
         else if (strcmp(mode, "netascii") == 0)
-            data_size = 128;
+            data_size = 512;
         else
             data_size = 512;
 
@@ -136,7 +136,8 @@ void handle_client(int sockfd, struct sockaddr_in client_addr, socklen_t client_
             data_size = 512;
         else if (strcmp(mode, "octet") == 0)
             data_size = 1;
-        // else if (strcmp(mode, "netascii") == 0)
+        else if (strcmp(mode, "netascii") == 0)
+            data_size = 512;
         else
             data_size = 512;
 

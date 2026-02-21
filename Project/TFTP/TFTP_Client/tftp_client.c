@@ -61,7 +61,8 @@ void process_command(tftp_client_t *client, char *command)
     // If user types quit or bye
     else if (strcmp("bye", cmd) == 0 || strcmp("quit", cmd) == 0)
     {
-        exit(1); // Exit program
+        disconnect(client);
+        exit(0); // Exit program
     }
 
     // If user types connect <ip>
@@ -129,6 +130,8 @@ void process_command(tftp_client_t *client, char *command)
         }
         else if (strcmp(mode_name, "netascii") == 0)
         {
+            strcpy(mode, "netascii");
+            data_size = 512;
         }
         else
         {
@@ -231,7 +234,6 @@ void receive_request(int sockfd, struct sockaddr_in server_addr, char *filename,
             printf("Server ready. Starting file upload...\n");
             send_file(sockfd, server_addr, len, filename);
         }
-
         // If server sends error
         else if (ntohs(response.opcode) == ERROR)
         {
@@ -264,17 +266,56 @@ void print_help()
 }
 
 // Validate IP format (returns true if valid IPv4)
+// bool validate_ip_address(char *ip)
+// {
+//     if (ip == NULL)
+//         return false;
+
+//     struct sockaddr_in sa;
+
+//     // Convert IP string to binary and check validity
+//     int result = inet_pton(AF_INET, ip, &(sa.sin_addr));
+
+//     return (result == 1);
+// }
+
 bool validate_ip_address(char *ip)
 {
     if (ip == NULL)
         return false;
 
-    struct sockaddr_in sa;
+    int num = 0;  // To store each octet value
+    int dots = 0; // Count dots
+    int len = strlen(ip);
 
-    // Convert IP string to binary and check validity
-    int result = inet_pton(AF_INET, ip, &(sa.sin_addr));
+    if (len < 7 || len > 15) // Minimum: 0.0.0.0 (7 chars)
+        return false;
 
-    return (result == 1);
+    for (int i = 0; i < len; i++)
+    {
+        if (ip[i] >= '0' && ip[i] <= '9')
+        {
+            num = num * 10 + (ip[i] - '0');
+
+            if (num > 255) // Each octet must be <= 255
+                return false;
+        }
+        else if (ip[i] == '.')
+        {
+            dots++;
+
+            if (dots > 3) // Only 3 dots allowed
+                return false;
+
+            num = 0; // Reset for next octet
+        }
+        else
+        {
+            return false; // Invalid character
+        }
+    }
+
+    return (dots == 3); // Valid only if exactly 3 dots
 }
 
 // Check whether file exists or not
