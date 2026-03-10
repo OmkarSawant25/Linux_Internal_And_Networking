@@ -96,8 +96,7 @@ void send_file(int sockfd, struct sockaddr_in client_addr, socklen_t client_len,
             recvfrom(sockfd, &ack_packet, sizeof(ack_packet), 0, (struct sockaddr *)&client_addr, &client_len);
         }
 
-        // If bytes_read is less than block size,
-        // this means it is the last packet
+        // If bytes_read is less than block size, this means it is the last packet
         if (bytes_read < data_size)
             break;
 
@@ -117,9 +116,7 @@ void receive_file(int sockfd, struct sockaddr_in client_addr, socklen_t client_l
 {
     tftp_packet packet, ack_packet;
 
-    // Open file for writing
-    // Create file if not present
-    // Truncate if already exists
+    // Open file for writing, Create file if not present, Truncate if already exists
     int fd = open(filename, O_CREAT | O_WRONLY | O_TRUNC, 0644);
 
     if (fd < 0)
@@ -199,8 +196,7 @@ void receive_file(int sockfd, struct sockaddr_in client_addr, socklen_t client_l
 
             expected_block++; // Expect next block
 
-            // If received data is less than block size,
-            // this means this was the last packet
+            // If received data is less than block size, this means this was the last packet
             if (received_size < data_size)
             {
                 break;

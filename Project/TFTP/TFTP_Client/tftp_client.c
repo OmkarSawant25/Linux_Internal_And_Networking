@@ -1,3 +1,70 @@
+/*
+===============================================================================
+Project Title : TFTP File Transfer System (Client)
+Name          : Omkar Ashok Sawant
+Batch Id      : 25021C_309
+Date          : 07/03/2026
+Language      : C Programming
+Protocol      : UDP (TFTP - Trivial File Transfer Protocol)
+===============================================================================
+
+Project Overview:
+    This program implements the client-side of a Trivial File Transfer
+    Protocol (TFTP) system using UDP sockets. The client interacts with
+    the user through a command-line interface and communicates with the
+    TFTP server to upload or download files.
+
+    The client sends requests to the server and performs file transfer
+    using TFTP packet exchange.
+
+Supported Operations:
+        - connect <server-ip> -> Connect to TFTP server
+        - put <filename>      -> Upload file to server (WRQ)
+        - get <filename>      -> Download file from server (RRQ)
+        - mode <type>         -> Change transfer mode
+        - help                -> Display available commands
+        - quit                -> Exit the application
+
+Features:
+    1. Interactive Command Interface:
+       - Accepts commands from the user.
+
+    2. Server Connection:
+       - Establishes UDP communication with the server.
+
+    3. File Upload (PUT):
+       - Sends WRQ request to server.
+       - Transfers file in DATA blocks.
+
+    4. File Download (GET):
+       - Sends RRQ request to server.
+       - Receives file block-by-block.
+
+    5. Transfer Modes:
+       - Supports default, octet, and netascii modes.
+
+    6. Error Handling:
+       - Validates IP address format.
+       - Checks file existence before uploading.
+
+File Structure:
+    - tftp_client.c : Client command processing and request generation.
+    - tftp_client.h : Client structure and function prototypes.
+    - tftp.c        : Common file transfer functions.
+    - tftp.h        : Packet definitions and protocol structures.
+
+Extensibility:
+    - GUI interface can be added for better usability.
+    - Support for secure file transfer can be integrated.
+    - Progress indicators and transfer statistics can be added.
+
+Suitable For:
+    - Students learning network programming in C.
+    - Demonstrating implementation of TFTP protocol.
+
+===============================================================================
+*/
+
 #include "tftp.h"
 #include "tftp_client.h"
 #include <stdio.h>

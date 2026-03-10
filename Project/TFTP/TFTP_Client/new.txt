@@ -1,24 +1,60 @@
-omkarsawant@LAPTOP-95PGA7VI:~/LI/Project/TFTP/TFTP_Client$ cc *
-omkarsawant@LAPTOP-95PGA7VI:~/LI/Project/TFTP/TFTP_Client$ ./a.out 
-Type help to get supported features
-tftp> connect 127.0.0.1
-INFO: Connected to server
-tftp> mode netascii
-Mode changed to default | Block size = 512
-tftp> put new.txt
-File name is : new.txt
-Sending WRQ to server...
-Server ready. Starting file upload...
-Inside octet
-Sent DATA block 1 (380 bytes)
-File transfer completed successfully
-tftp> mode netascii 
-Mode changed to default | Block size = 512
-tftp> put new.txt
-File name is : new.txt
-Sending WRQ to server...
-Server ready. Starting file upload...
-Inside octet
-Sent DATA block 1 (380 bytes)
-File transfer completed successfully
-tftp> ^C
+===============================================================================
+Project Title : TFTP File Transfer System (Server)
+Name          : Omkar Ashok Sawant
+Batch Id      : 25021C_309
+Date          : 07/03/2026
+Language      : C Programming
+Protocol      : UDP (TFTP - Trivial File Transfer Protocol)
+===============================================================================
+
+Project Overview:
+    This program implements the server-side of a Trivial File Transfer
+    Protocol (TFTP) system using UDP sockets in C. The server listens
+    on a predefined port and processes requests from multiple clients
+    for uploading or downloading files.
+
+    The server handles two primary requests:
+        - WRQ (Write Request) -> Client uploads file to server
+        - RRQ (Read Request)  -> Client downloads file from server
+
+    File transfer occurs using DATA packets and acknowledgements (ACK).
+
+Features:
+    1. Server Initialization:
+       - Creates UDP socket.
+       - Binds socket to port 6969.
+       - Listens continuously for incoming client requests.
+
+    2. WRQ Handling (File Upload):
+       - Receives write request from client.
+       - Sends ACK(0) to confirm readiness.
+       - Receives file data block-by-block.
+
+    3. RRQ Handling (File Download):
+       - Validates requested file.
+       - Sends file in DATA packets to client.
+       - Waits for acknowledgements.
+
+    4. Transfer Modes:
+       - Supports default, octet, and netascii modes.
+
+    5. Error Handling:
+       - Sends ERROR packet if requested file does not exist.
+       - Handles file creation and truncation safely.
+
+File Structure:
+    - tftp_server.c : Server implementation and request handling.
+    - tftp.c        : Common file transfer functions (send_file, receive_file).
+    - tftp.h        : Packet structures, macros, and function prototypes.
+
+Extensibility:
+    - Can be extended to support multiple clients using threads.
+    - Timeout and retransmission mechanisms can be added.
+    - Logging system and authentication can be implemented.
+
+Suitable For:
+    - Students learning computer networks and socket programming.
+    - Demonstrating UDP-based protocol implementation in C.
+
+===============================================================================
+
