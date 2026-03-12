@@ -53,12 +53,15 @@
 
 int main(int argc, char *argv[])
 {
+    // check no arguments
     if (argc <= 1)
     {
         printf("Error: No arguments passed\n");
         printf("Usage: ./pipe <command1 > '|' <command2> \n");
         return -1;
     }
+
+    // check insufficient arguments
     if (argc < 4)
     {
         printf("Error: Insufficient arguments passed\n");
@@ -68,15 +71,18 @@ int main(int argc, char *argv[])
 
     int next_index = -1;
 
+    // find position of '|' and split commands
     for (int i = 1; i < argc; i++)
     {
         if (!strcmp(argv[i], "|"))
         {
-            argv[i] = NULL;
-            next_index = i + 1;
+            argv[i] = NULL;     // terminate first command arguments
+            next_index = i + 1; // second command starts from here
             break;
         }
     }
+
+    // if '|' not found
     if (next_index == -1)
     {
         printf("Error: '|' is not present\n");
@@ -85,35 +91,38 @@ int main(int argc, char *argv[])
     }
 
     int pipe_fd[2];
-    pipe(pipe_fd);
+    pipe(pipe_fd); // create pipe
 
     int pid1 = fork();
     int status;
-    if (pid1 > 0)
+
+    if (pid1 > 0) // parent
     {
-        // Parent
-        int pid2 = fork();
-        if (pid2 > 0)
+        int pid2 = fork(); // create second child
+
+        if (pid2 > 0) // parent after creating both children
         {
-            close(pipe_fd[0]);
-            close(pipe_fd[1]);
-            waitpid(pid2, &status, 0);
+            close(pipe_fd[0]); // close unused read end
+            close(pipe_fd[1]); // close unused write end
+
+            waitpid(pid2, &status, 0); // wait for child2
         }
-        else if (pid2 == 0)
+        else if (pid2 == 0) // child2 (reader)
         {
-            // Child 2
-            close(pipe_fd[1]);
-            dup2(pipe_fd[0], 0);
-            execvp(argv[next_index], argv + next_index);
+            close(pipe_fd[1]);   // close write end
+            dup2(pipe_fd[0], 0); // make pipe read end as STDIN
+
+            execvp(argv[next_index], argv + next_index); // execute second command
         }
-        waitpid(pid1, &status, 0);
+
+        waitpid(pid1, &status, 0); // wait for child1
     }
-    else if (pid1 == 0)
+    else if (pid1 == 0) // child1 (writer)
     {
-        // Child 1
-        close(pipe_fd[0]);
-        dup2(pipe_fd[1], 1);
-        execvp(argv[1], argv + 1);
+        close(pipe_fd[0]);   // close read end
+        dup2(pipe_fd[1], 1); // make pipe write end as STDOUT
+
+        execvp(argv[1], argv + 1); // execute first command
     }
     else
     {

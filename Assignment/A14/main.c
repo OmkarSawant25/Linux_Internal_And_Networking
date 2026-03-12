@@ -1,3 +1,33 @@
+/*
+   Name        : Omkar Ashok Sawant
+   Program     : A14 – WAP to print the address which is causing Segmentation Fault
+
+   Description :
+   This program demonstrates signal handling using the sigaction()
+   system call. It registers a custom signal handler for the SIGSEGV
+   (segmentation fault) signal and prints the memory address which
+   caused the fault using information available in struct siginfo.
+
+   The program intentionally creates a segmentation fault condition.
+   When the fault occurs, the registered signal handler gets executed,
+   retrieves the faulting address from the siginfo structure, prints
+   the address on the standard output, and terminates the program.
+
+   The program demonstrates:
+   1. Handling signals using sigaction()
+   2. Working of SIGSEGV signal
+   3. Usage of sa_sigaction handler with SA_SIGINFO flag
+   4. Accessing fault address using struct siginfo
+   5. Creating and handling runtime errors safely
+
+   Problem Statement :
+   Write a C program to handle segmentation fault using sigaction().
+   Register a signal handler that prints the memory address which
+   caused the segmentation fault using struct siginfo. The program
+   should intentionally generate a segmentation fault, display the
+   faulting address, and then exit gracefully.
+*/
+
 #include <stdio.h>
 #include <signal.h>
 #include <string.h>

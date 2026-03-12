@@ -41,46 +41,54 @@
 int main()
 {
     int pid, pid1, pid2;
-    pid = fork();
     int status;
-    if (pid > 0)
+    pid = fork(); // create first child
+    if (pid > 0)  // parent process
     {
         printf("A child1 created with pid %d \n", pid);
-        pid1 = fork();
-        if (pid1 > 0)
+        pid1 = fork(); // create second child
+        if (pid1 > 0)  // still parent
         {
             printf("A child2 created with pid %d \n", pid1);
-            pid2 = fork();
-            if (pid2 > 0)
+            pid2 = fork(); // create third child
+            if (pid2 > 0)  // parent after creating all children
             {
                 printf("A child3 created with pid %d \n", pid2);
+                // wait for child1 to terminate (non-blocking loop)
                 while (waitpid(pid, &status, WNOHANG) == 0);
+
                 if (WIFEXITED(status))
                 {
                     printf("child1 %d terminated normally with exit status %d parent terminating\n", pid, WEXITSTATUS(status));
                 }
             }
-            else if (pid2 == 0)
+            else if (pid2 == 0) // third child process
             {
-                sleep(3);
+                sleep(3); // simulate some work
             }
+
+            // wait for child2 termination
             while (waitpid(pid1, &status, WNOHANG) == 0);
+
             if (WIFEXITED(status))
             {
                 printf("child2 %d terminated normally with exit status %d parent terminating\n", pid1, WEXITSTATUS(status));
             }
         }
-        else if (pid1 == 0)
+        else if (pid1 == 0) // second child process
         {
             sleep(3);
         }
+
+        // wait for child3 termination
         while (waitpid(pid2, &status, WNOHANG) == 0);
+
         if (WIFEXITED(status))
         {
             printf("child3 %d terminated normally with exit status %d parent terminating\n", pid2, WEXITSTATUS(status));
         }
     }
-    else if (pid == 0)
+    else if (pid == 0) // first child process
     {
         sleep(3);
     }

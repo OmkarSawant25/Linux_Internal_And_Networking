@@ -46,24 +46,33 @@
 */
 
 #include <stdio.h>
-#include <unistd.h> // getopt
-#include <fcntl.h>
+#include <unistd.h> // getopt(), read()
+#include <fcntl.h>  // open()
 #include <stdbool.h>
 
-extern int optind;
+extern int optind; // index after option parsing
+
+// Function to count lines, words and characters
 void my_wc(int fd, int *line_count, int *word_count, int *char_count)
 {
     char ch, prev = ' ';
+
+    // Read till EOF
     while (read(fd, &ch, 1) != 0)
     {
-        (*char_count)++;
+        (*char_count)++; // count characters
+
         if (ch == '\n')
-            (*line_count)++;
+            (*line_count)++; // count lines
+
+        // detect word end
         if ((ch == ' ' || ch == '\n' || ch == '\t') && (prev != ' ' && prev != '\n' && prev != '\t'))
             (*word_count)++;
 
         prev = ch;
     }
+
+    // last word handling
     if (prev != ' ' && prev != '\n' && prev != '\t')
         (*word_count)++;
 }
@@ -71,19 +80,17 @@ void my_wc(int fd, int *line_count, int *word_count, int *char_count)
 int main(int argc, char *argv[])
 {
     int ret;
+
     bool line_flag = 0;
     bool char_flag = 0;
     bool word_flag = 0;
 
-    int line_count = 0;
-    int word_count = 0;
-    int char_count = 0;
+    int line_count = 0, word_count = 0, char_count = 0;
     int file_count = 0;
 
-    int line_total = 0;
-    int word_total = 0;
-    int char_total = 0;
+    int line_total = 0, word_total = 0, char_total = 0;
 
+    // option parsing
     while ((ret = getopt(argc, argv, "lwc")) != -1)
     {
         if (ret == 'l')
@@ -93,46 +100,46 @@ int main(int argc, char *argv[])
         else if (ret == 'c')
             char_flag = 1;
     }
-    // printf("Pos is %d\n", optind);
 
+    // optind will point to first file name.
+    
+    // process each file
     for (int i = optind; argv[i] != NULL; i++)
     {
-        line_count = 0;
-        word_count = 0;
-        char_count = 0;
+        line_count = word_count = char_count = 0;
 
         int fd = open(argv[i], O_RDONLY);
+
         my_wc(fd, &line_count, &word_count, &char_count);
 
         line_total += line_count;
         word_total += word_count;
         char_total += char_count;
+
         file_count++;
 
-        if (line_flag == 0 && word_flag == 0 && char_flag == 0)
+        // print all if no option
+        if (!line_flag && !word_flag && !char_flag)
         {
             printf("%5d%5d%5d%12s\n", line_count, word_count, char_count, argv[i]);
             continue;
         }
+
         if (line_flag)
-        {
             printf("%5d", line_count);
-        }
         if (word_flag)
-        {
             printf("%5d", word_count);
-        }
         if (char_flag)
-        {
             printf("%5d", char_count);
-        }
+
         printf("%12s\n", argv[i]);
     }
-    if (file_count > 1)
-    {
-        printf("%5d%5d%5d%12s\n", line_total, word_total, char_total, "total");
-    }
 
+    // print total
+    if (file_count > 1)
+        printf("%5d%5d%5d%12s\n", line_total, word_total, char_total, "total");
+
+    // stdin case
     if (argv[optind] == NULL)
     {
         my_wc(0, &line_count, &word_count, &char_count);

@@ -51,12 +51,13 @@
 
 int main(int argc, char *argv[])
 {
-    int cmd[argc];
+    int cmd[argc]; // stores starting index of each command
     int count = 1;
     int pipe_count = 0;
     int pipe_fd[2];
     int pid;
 
+    // check no arguments
     if (argc == 1)
     {
         printf("Error: No arguments passed, Provide atleast one pipe or more\n");
@@ -65,52 +66,57 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    cmd[0] = 1;
+    cmd[0] = 1; // first command starts from argv[1]
 
+    // find all '|' and split commands
     for (int i = 0; i < argc; i++)
     {
         if (strcmp(argv[i], "|") == 0)
         {
-            argv[i] = NULL;
-            cmd[count++] = i + 1;
-            pipe_count++;
+            argv[i] = NULL;       // terminate previous command args
+            cmd[count++] = i + 1; // next command start index
+            pipe_count++;         // number of pipes
         }
     }
 
+    // loop to create processes for each command
     for (int i = 0; i <= pipe_count; i++)
     {
         if (i != pipe_count)
         {
-            pipe(pipe_fd);
+            pipe(pipe_fd); // create pipe for communication
         }
+
         pid = fork();
 
         if (pid > 0)
         {
-            // Parent Process
+            // Parent process
             if (i != pipe_count)
             {
-                dup2(pipe_fd[0], 0);
+                dup2(pipe_fd[0], 0); // next command will read from pipe
                 close(pipe_fd[0]);
                 close(pipe_fd[1]);
             }
-            wait(NULL);
+            wait(NULL); // wait child to finish
         }
         else if (pid == 0)
         {
             // Child process
             if (i != pipe_count)
             {
-                dup2(pipe_fd[1], 1);
+                dup2(pipe_fd[1], 1); // redirect stdout to pipe
                 close(pipe_fd[0]);
                 close(pipe_fd[1]);
             }
-            execvp(argv[cmd[i]], argv + cmd[i]);
+
+            execvp(argv[cmd[i]], argv + cmd[i]); // execute command
         }
         else
         {
             perror("fork");
         }
     }
+
     return 0;
 }

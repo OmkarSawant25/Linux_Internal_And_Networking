@@ -1,3 +1,40 @@
+/*
+   Name        : Omkar Ashok Sawant
+   Program     : A13 – Implement communication between three processes using PIPE, FIFO and SHM
+
+   Description :
+   This program demonstrates inter-process communication (IPC)
+   between three different processes using three IPC mechanisms:
+   Pipe, FIFO (named pipe), and Shared Memory.
+
+   The first process generates data and sends it to the second
+   process using an unnamed pipe. The second process reads the
+   data from the pipe, performs processing, and forwards the
+   modified data to the third process using a FIFO. The third
+   process then reads the data from the FIFO, performs further
+   processing, and writes the final result into shared memory.
+
+   The first process finally reads the processed data from
+   shared memory and displays the output on standard output.
+
+   The program demonstrates:
+   1. Communication between related processes using pipe()
+   2. Communication between processes using FIFO (mkfifo)
+   3. Communication using shared memory (shmget, shmat)
+   4. Data flow between multiple processes using different IPC
+   5. Basic synchronization and process coordination
+   6. Usage of system calls like fork(), read(), write(), exec()
+
+   Problem Statement :
+   Write a C program to establish communication between three
+   processes using pipe, FIFO and shared memory. The first
+   process should send data through a pipe to the second
+   process. The second process should process and forward the
+   data through FIFO to the third process. The third process
+   should write the final processed data into shared memory,
+   which is then read and displayed by the first process.
+*/
+
 #include <stdio.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>

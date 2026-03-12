@@ -23,16 +23,16 @@ int main()
 {
     int file = open("demo.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
 
-    int backup = dup(1);   // backup stdout
+    int backup = dup(1); // backup stdout
 
     close(1);
-    dup(file);             // stdout -> demo.txt
+    dup(file); // stdout -> demo.txt
 
     printf("Hello");
-    fflush(stdout);        
+    fflush(stdout);
 
     close(1);
-    dup(backup);           // restore stdout
+    dup(backup); // restore stdout
 
     printf("World\n");
 }

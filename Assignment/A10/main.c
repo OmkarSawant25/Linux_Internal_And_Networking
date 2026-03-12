@@ -48,12 +48,15 @@
 
 int main(int argc, char *argv[])
 {
+	// check no arguments
 	if (argc <= 1)
 	{
 		printf("Error: No arguments passed\n");
 		printf("Usage: ./three_pipes <command1> '|' <command2> '|' <command3>\n");
 		return -1;
 	}
+
+	// check insufficient arguments
 	if (argc < 6)
 	{
 		printf("Error: Insufficient arguments passed\n");
@@ -64,19 +67,22 @@ int main(int argc, char *argv[])
 	int next_index_1 = -1;
 	int next_index_2 = -1;
 
+	// find positions of both '|'
 	for (int i = 1; i < argc; i++)
 	{
 		if (!strcmp(argv[i], "|") && next_index_1 == -1)
 		{
-			argv[i] = NULL;
-			next_index_1 = i + 1;
+			argv[i] = NULL;		  // end of first command args
+			next_index_1 = i + 1; // second command starts
 		}
 		else if (!strcmp(argv[i], "|") && next_index_1 != -1 && next_index_2 == -1)
 		{
-			argv[i] = NULL;
-			next_index_2 = i + 1;
+			argv[i] = NULL;		  // end of second command args
+			next_index_2 = i + 1; // third command starts
 		}
 	}
+
+	// if both pipes not found
 	if (next_index_1 == -1 || next_index_2 == -1)
 	{
 		printf("Error: '|' is not present\n");
@@ -87,38 +93,39 @@ int main(int argc, char *argv[])
 	int pipe_fd1[2];
 	int pipe_fd2[2];
 	int status;
-	pipe(pipe_fd1);
+
+	pipe(pipe_fd1); // pipe between child1 and child2
 
 	int pid1 = fork();
-	// int status;
-	if (pid1 > 0)
-	{
-		// Parent
 
-		// Create the pipe_fd2
-		pipe(pipe_fd2);
+	if (pid1 > 0) // parent
+	{
+		pipe(pipe_fd2); // pipe between child2 and child3
+
 		int pid2 = fork();
-		if (pid2 > 0)
+
+		if (pid2 > 0) // parent
 		{
 			int pid3 = fork();
-			if (pid3 > 0)
+
+			if (pid3 > 0) // parent after creating all children
 			{
-				// Parent must close all pipe ends
+				// close all pipe ends in parent
 				close(pipe_fd1[0]);
 				close(pipe_fd1[1]);
 				close(pipe_fd2[0]);
 				close(pipe_fd2[1]);
 
-				// Wait for all children
+				// wait for all children
 				waitpid(pid1, &status, 0);
 				waitpid(pid2, &status, 0);
 				waitpid(pid3, &status, 0);
 			}
-			else if (pid3 == 0)
+			else if (pid3 == 0) // child3 (final reader)
 			{
-				// Child 3
-				dup2(pipe_fd2[0], 0);
+				dup2(pipe_fd2[0], 0); // pipe2 read -> STDIN
 
+				// close unused fds
 				close(pipe_fd1[0]);
 				close(pipe_fd1[1]);
 				close(pipe_fd2[1]);
@@ -127,17 +134,14 @@ int main(int argc, char *argv[])
 				execvp(argv[next_index_2], argv + next_index_2);
 				perror("execvp");
 			}
-
-			// waitpid(pid3, &status, 0);
 		}
-		else if (pid2 == 0)
+		else if (pid2 == 0) // child2 (middle stage)
 		{
-			// Child 2
-			close(pipe_fd1[1]);
-			close(pipe_fd2[0]);
+			close(pipe_fd1[1]); // close write end pipe1
+			close(pipe_fd2[0]); // close read end pipe2
 
-			dup2(pipe_fd1[0], 0);
-			dup2(pipe_fd2[1], 1);
+			dup2(pipe_fd1[0], 0); // pipe1 read -> STDIN
+			dup2(pipe_fd2[1], 1); // pipe2 write -> STDOUT
 
 			close(pipe_fd1[0]);
 			close(pipe_fd2[1]);
@@ -145,15 +149,13 @@ int main(int argc, char *argv[])
 			execvp(argv[next_index_1], argv + next_index_1);
 			perror("execvp");
 		}
-		// waitpid(pid1, &status, 0);
-		// waitpid(pid2, &status, 0);
 	}
-	else if (pid1 == 0)
+	else if (pid1 == 0) // child1 (first writer)
 	{
-		// Child 1
-		close(pipe_fd1[0]);
-		dup2(pipe_fd1[1], 1);
+		close(pipe_fd1[0]);	  // close read end
+		dup2(pipe_fd1[1], 1); // pipe1 write -> STDOUT
 		close(pipe_fd1[1]);
+
 		execvp(argv[1], argv + 1);
 		perror("execvp");
 	}
