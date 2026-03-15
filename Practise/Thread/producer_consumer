@@ -1,0 +1,93 @@
+
+# ⭐ Producer–Consumer Problem — Short Note
+
+Producer–Consumer is a **synchronization problem** in which:
+
+* One thread (Producer) **produces data**
+* Another thread (Consumer) **consumes data**
+* Both use a **shared buffer (memory)**
+
+The main challenge is:
+
+-> Producer should not produce when buffer is FULL  
+-> Consumer should not consume when buffer is EMPTY
+
+To solve this, we use:
+
+✅ **Semaphore** for coordination
+✅ **Mutex** for protecting critical section (in multi-thread case)
+
+---
+
+# ⭐ Key Concepts
+
+* **Bounded Buffer** → Buffer has fixed size
+* **Race Condition** → If both access buffer together
+* **Synchronization** → Required to control execution
+
+---
+
+# ⭐ Semaphores Used
+
+1️⃣ **empty** → counts empty slots
+2️⃣ **full** → counts filled slots
+3️⃣ **mutex** → protects buffer access
+
+---
+
+# ⭐ Simple Flow ⭐⭐⭐⭐⭐
+
+## ✅ Initial State
+
+```text
+Buffer size = N
+
+empty = N  
+full = 0  
+mutex = 1
+```
+
+---
+
+## ✅ Producer Flow
+
+```text
+1. sem_wait(empty)   → wait if buffer full  
+2. sem_wait(mutex)   → enter critical section  
+3. Put item in buffer  
+4. sem_post(mutex)   → leave critical section  
+5. sem_post(full)    → increase filled slots
+```
+
+---
+
+## ✅ Consumer Flow
+
+```text
+1. sem_wait(full)    → wait if buffer empty  
+2. sem_wait(mutex)   → enter critical section  
+3. Remove item from buffer  
+4. sem_post(mutex)   → leave critical section  
+5. sem_post(empty)   → increase empty slots
+```
+
+---
+
+# ⭐ Very Simple Diagram Flow
+
+```text
+Producer → produces → buffer → consumer consumes
+
+If buffer FULL → producer waits  
+If buffer EMPTY → consumer waits
+```
+
+---
+
+# ⭐ One Line Interview Answer ⭐⭐⭐⭐⭐
+
+```text
+Producer–Consumer Problem is a synchronization problem where producer generates data and consumer uses it through a shared bounded buffer using semaphores to avoid overflow and underflow.
+```
+
+---
